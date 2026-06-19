@@ -90,7 +90,19 @@ ok "клиенты применены"
 
 # --- 5. htpasswd ---
 if [[ ! -f /etc/nginx/.htpasswd ]] || ! grep -q "^${PANEL_USER}:" /etc/nginx/.htpasswd 2>/dev/null; then
-    command -v htpasswd >/dev/null || { info "Ставлю apache2-utils"; apt-get install -y apache2-utils >/dev/null; }
+    if ! command -v htpasswd >/dev/null; then
+        info "Ставлю htpasswd"
+        if command -v apt-get >/dev/null; then
+            apt-get update -qq && apt-get install -y apache2-utils >/dev/null
+        elif command -v dnf >/dev/null; then
+            dnf install -y httpd-tools >/dev/null
+        elif command -v yum >/dev/null; then
+            yum install -y httpd-tools >/dev/null
+        else
+            die "Не нашёл apt/dnf/yum — поставьте htpasswd вручную (apache2-utils / httpd-tools)"
+        fi
+        command -v htpasswd >/dev/null || die "htpasswd не установился"
+    fi
     if [[ -z "$PANEL_PASS" ]]; then
         PANEL_PASS="$(openssl rand -base64 12)"
         GEN_PASS=1
@@ -112,7 +124,13 @@ addr = os.environ["PANEL_ADDR"]
 START = "# AUTOXRAY_PANEL_START"
 END = "# AUTOXRAY_PANEL_END"
 
-block = f"""{START}
+# Redirect the slash-less form (/admin -> /admin/) so the frontend, which
+# resolves API calls relative to its directory, always has a trailing slash.
+redirect = ""
+if admin.endswith("/") and admin != "/":
+    redirect = f"\n    location = {admin.rstrip('/')} {{ return 301 {admin}; }}"
+
+block = f"""{START}{redirect}
     location {admin} {{
         auth_basic "panel";
         auth_basic_user_file /etc/nginx/.htpasswd;
