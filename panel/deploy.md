@@ -1,5 +1,31 @@
 # Деплой xray-panel
 
+## Быстрый старт — одним скриптом (рекомендуется)
+
+Всё делает `install.sh` сам: бинарь, env, Stats API, nginx-локейшн, basic-auth,
+systemd. Идемпотентно. Требует: уже установленный базовый autoXRAY и папку
+`autoXRAY-multi/` в `/usr/local/etc/xray/`.
+
+```bash
+# 1. На машине разработки — собрать и закинуть всю папку panel/
+cd panel && make build
+scp -r . root@SERVER:/root/panel/
+
+# 2. На сервере — запустить установщик от root
+ssh root@SERVER
+cd /root/panel && ./install.sh
+```
+
+Скрипт выведет URL панели, логин и (если пароль не задан) сгенерированный пароль.
+Переопределить можно через переменные: `PANEL_USER`, `PANEL_PASS`, `ADMIN_PATH`,
+`PANEL_ADDR`. Пример: `PANEL_USER=me PANEL_PASS=secret ./install.sh`.
+
+Если `go` есть на сервере, бинарь соберётся прямо там (можно не делать `make build`).
+
+---
+
+## Ручная установка (по шагам)
+
 ## Сборка (на машине разработки)
 ```bash
 cd panel && make build      # -> ./xray-panel (linux/amd64)
