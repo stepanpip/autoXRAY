@@ -52,3 +52,47 @@ func TestParseSkipsEnvNotInClientsTxt(t *testing.T) {
 		t.Fatalf("ghost should be skipped, got %d", len(got))
 	}
 }
+
+func TestAddAppendsName(t *testing.T) {
+	dir := fixture(t)
+	if err := Add(dir, "carol"); err != nil {
+		t.Fatal(err)
+	}
+	names, _ := AllowedNames(dir)
+	found := false
+	for _, n := range names {
+		if n == "carol" {
+			found = true
+		}
+	}
+	if !found {
+		t.Fatalf("carol not added: %v", names)
+	}
+}
+
+func TestAddRejectsBadName(t *testing.T) {
+	dir := fixture(t)
+	if err := Add(dir, "bad name!"); err == nil {
+		t.Fatal("expected error for invalid name")
+	}
+}
+
+func TestAddRejectsDuplicate(t *testing.T) {
+	dir := fixture(t)
+	if err := Add(dir, "alice"); err == nil {
+		t.Fatal("expected error for duplicate")
+	}
+}
+
+func TestDeleteRemovesName(t *testing.T) {
+	dir := fixture(t)
+	if err := Delete(dir, "alice"); err != nil {
+		t.Fatal(err)
+	}
+	names, _ := AllowedNames(dir)
+	for _, n := range names {
+		if n == "alice" {
+			t.Fatalf("alice still present: %v", names)
+		}
+	}
+}

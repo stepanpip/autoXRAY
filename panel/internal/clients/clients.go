@@ -2,6 +2,7 @@ package clients
 
 import (
 	"bufio"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
@@ -99,4 +100,53 @@ func Parse(axDir string) ([]Client, error) {
 	}
 	sort.Slice(out, func(i, j int) bool { return out[i].Name < out[j].Name })
 	return out, nil
+}
+
+// Add validates name, rejects duplicates, appends to clients.txt.
+func Add(axDir, name string) error {
+	if !ValidateName(name) {
+		return fmt.Errorf("invalid client name %q (allowed: a-z A-Z 0-9 _ -)", name)
+	}
+	names, err := AllowedNames(axDir)
+	if err != nil {
+		return err
+	}
+	for _, n := range names {
+		if n == name {
+			return fmt.Errorf("client %q already exists", name)
+		}
+	}
+	f, err := os.OpenFile(clientsTxtPath(axDir), os.O_CREATE|os.O_WRONLY|os.O_APPEND, 0o644)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = fmt.Fprintf(f, "%s\n", name)
+	return err
+}
+
+// Delete rewrites clients.txt without the line whose trimmed name == name.
+func Delete(axDir, name string) error {
+	path := clientsTxtPath(axDir)
+	data, err := os.ReadFile(path)
+	if err != nil {
+		return err
+	}
+	var kept []string
+	for _, raw := range strings.Split(string(data), "\n") {
+		line := strings.ReplaceAll(raw, "\r", "")
+		t := strings.TrimSpace(line)
+		if t != "" && !strings.HasPrefix(t, "#") {
+			n := t
+			if i := strings.Index(n, "#"); i >= 0 {
+				n = strings.TrimSpace(n[:i])
+			}
+			if n == name {
+				continue
+			}
+		}
+		kept = append(kept, line)
+	}
+	out := strings.Join(kept, "\n")
+	return os.WriteFile(path, []byte(out), 0o644)
 }
