@@ -1,0 +1,14 @@
+[Unit]
+Description=autoXRAY admin panel
+After=network.target xray.service
+
+[Service]
+Type=simple
+EnvironmentFile=/usr/local/etc/xray/panel.env
+ExecStart=/usr/local/bin/xray-panel
+Restart=always
+RestartSec=3
+User=root
+
+[Install]
+WantedBy=multi-user.target

@@ -140,7 +140,7 @@ ax_dir = os.environ.get("AX_DIR", "/usr/local/etc/xray")
 cfg_path = os.path.join(ax_dir, "config.json")
 clients_dir = os.path.join(ax_dir, "clients")
 
-uuids = []
+entries = []  # (email, uuid)
 for path in sorted(glob.glob(os.path.join(clients_dir, "*.env"))):
     data = {}
     with open(path) as f:
@@ -150,17 +150,18 @@ for path in sorted(glob.glob(os.path.join(clients_dir, "*.env"))):
                 k, v = line.split("=", 1)
                 data[k.strip()] = v.strip().strip("'\"")
     u = data.get("xray_uuid_vrv")
+    name = data.get("CLIENT_NAME") or os.path.splitext(os.path.basename(path))[0]
     if u:
-        uuids.append(u)
+        entries.append((name, u))
 
-if not uuids:
+if not entries:
     raise SystemExit("Нет UUID клиентов в clients/*.env")
 
 with open(cfg_path) as f:
     cfg = json.load(f)
 
-vision = [{"flow": "xtls-rprx-vision", "id": u} for u in uuids]
-plain = [{"id": u} for u in uuids]
+vision = [{"flow": "xtls-rprx-vision", "id": u, "email": e} for e, u in entries]
+plain = [{"id": u, "email": e} for e, u in entries]
 
 for ib in cfg.get("inbounds", []):
     if ib.get("protocol") != "vless":
@@ -176,7 +177,7 @@ for ib in cfg.get("inbounds", []):
 
 with open(cfg_path, "w") as f:
     json.dump(cfg, f, indent=2)
-print(f"Xray: {len(uuids)} клиент(ов) в inbounds vless")
+print(f"Xray: {len(entries)} клиент(ов) в inbounds vless")
 PY
 }
 

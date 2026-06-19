@@ -1,0 +1,617 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Xray Panel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Hanken+Grotesk:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<style>
+*{box-sizing:border-box;}
+html,body{margin:0;background:#15171c;}
+@keyframes pulseDot{0%{opacity:1;}50%{opacity:.3;}100%{opacity:1;}}
+::-webkit-scrollbar{width:9px;height:9px;}
+::-webkit-scrollbar-thumb{background:rgba(255,255,255,.09);border-radius:9px;}
+::-webkit-scrollbar-thumb:hover{background:rgba(255,255,255,.16);}
+::-webkit-scrollbar-track{background:transparent;}
+input::placeholder{color:#5b606a;}
+body{color:#e7e9ec;font-family:'Hanken Grotesk',system-ui,sans-serif;font-size:14px;-webkit-font-smoothing:antialiased;}
+.nav-btn{display:flex;align-items:center;gap:11px;width:100%;padding:10px 12px;border:none;background:transparent;border-radius:10px;cursor:pointer;color:#969ba3;font:inherit;font-size:13.5px;font-weight:500;text-align:left;transition:background .15s;}
+.nav-btn:not(:disabled):hover{background:rgba(255,255,255,.045);}
+.nav-btn:disabled{opacity:.4;cursor:default;}
+.nav-btn.active{background:rgba(168,180,216,.16);color:#b4bee0;}
+.search-input{background:#1b1e24;border:1px solid rgba(255,255,255,.08);border-radius:10px;height:38px;padding:0 14px;color:#e7e9ec;font:inherit;font-size:13px;width:212px;outline:none;transition:border-color .15s;}
+.search-input:focus{border-color:rgba(168,180,216,.55);}
+.add-btn{display:flex;align-items:center;gap:7px;border:1px solid rgba(168,180,216,.4);background:rgba(168,180,216,.12);color:#b4bee0;font:inherit;font-size:13px;font-weight:600;height:38px;padding:0 15px;border-radius:10px;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.add-btn:not(:disabled):hover{background:rgba(168,180,216,.2);}
+.add-btn:disabled{opacity:.6;cursor:default;}
+.user-row{display:grid;grid-template-columns:1.9fr .95fr 1.05fr .85fr .85fr .85fr 1fr;align-items:center;padding:14px 22px;border-top:1px solid rgba(255,255,255,.05);cursor:pointer;transition:background .12s;}
+.user-row:hover{background:rgba(255,255,255,.025);}
+.back-btn{display:flex;align-items:center;gap:8px;align-self:flex-start;border:none;background:transparent;color:#969ba3;font:inherit;font-size:13px;font-weight:500;cursor:pointer;padding:4px 0;transition:color .15s;}
+.back-btn:hover{color:#e7e9ec;}
+.copy-btn{border:1px solid rgba(168,180,216,.4);background:rgba(168,180,216,.12);color:#b4bee0;font:inherit;font-size:12.5px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.copy-btn:hover{background:rgba(168,180,216,.2);}
+.qr-btn{border:1px solid rgba(255,255,255,.12);background:rgba(255,255,255,.04);color:#b6bbc2;font:inherit;font-size:12.5px;font-weight:600;padding:9px 16px;border-radius:9px;cursor:pointer;white-space:nowrap;transition:background .15s;}
+.qr-btn:hover{background:rgba(255,255,255,.08);}
+.del-btn{display:flex;align-items:center;gap:8px;align-self:flex-start;border:1px solid rgba(214,185,161,.4);background:rgba(214,185,161,.08);color:#d6b9a1;font:inherit;font-size:13px;font-weight:600;padding:10px 18px;border-radius:10px;cursor:pointer;transition:background .15s;}
+.del-btn:not(:disabled):hover{background:rgba(214,185,161,.16);}
+.del-btn:disabled{opacity:.6;cursor:default;}
+.modal-overlay{position:fixed;inset:0;background:rgba(0,0,0,.88);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;z-index:100;padding:24px;}
+.modal-card{background:#1b1e24;border:1px solid rgba(255,255,255,.1);border-radius:16px;padding:26px;width:100%;max-width:420px;}
+.modal-input{width:100%;background:#15171c;border:1px solid rgba(255,255,255,.1);border-radius:10px;height:42px;padding:0 14px;color:#e7e9ec;font:inherit;font-size:14px;outline:none;transition:border-color .15s;}
+.modal-input:focus{border-color:rgba(168,180,216,.55);}
+.modal-input.err{border-color:rgba(214,185,161,.7);}
+.btn-primary{flex:1;border:1px solid rgba(168,180,216,.4);background:rgba(168,180,216,.16);color:#b4bee0;font:inherit;font-size:13.5px;font-weight:600;padding:11px;border-radius:10px;cursor:pointer;transition:background .15s;}
+.btn-primary:not(:disabled):hover{background:rgba(168,180,216,.24);}
+.btn-primary:disabled{opacity:.6;cursor:default;}
+.btn-ghost{flex:1;border:1px solid rgba(255,255,255,.1);background:transparent;color:#969ba3;font:inherit;font-size:13.5px;font-weight:600;padding:11px;border-radius:10px;cursor:pointer;transition:background .15s;}
+.btn-ghost:not(:disabled):hover{background:rgba(255,255,255,.045);}
+.btn-danger{flex:1;border:1px solid rgba(214,185,161,.45);background:rgba(214,185,161,.14);color:#d6b9a1;font:inherit;font-size:13.5px;font-weight:600;padding:11px;border-radius:10px;cursor:pointer;transition:background .15s;}
+.btn-danger:not(:disabled):hover{background:rgba(214,185,161,.22);}
+.btn-danger:disabled{opacity:.6;cursor:default;}
+</style>
+</head>
+<body>
+<div id="app" style="display:flex;min-height:100vh;background:#15171c;"></div>
+<div id="modal-root"></div>
+
+<script>
+"use strict";
+
+// ===================== state =====================
+var state = { screen: 'users', users: [], selected: null, search: '', node: null };
+
+// ===================== helpers (ported from mockup) =====================
+function rng(seed){
+  var s = seed % 2147483647;
+  if (s <= 0) s += 2147483646;
+  return function(){ s = (s * 16807) % 2147483647; return (s - 1) / 2147483646; };
+}
+function smooth(pts){
+  if (!pts.length) return '';
+  if (pts.length < 2) return 'M ' + pts[0].x + ' ' + pts[0].y;
+  var d = 'M ' + pts[0].x + ' ' + pts[0].y;
+  for (var i = 0; i < pts.length - 1; i++){
+    var p0 = pts[i-1] || pts[i], p1 = pts[i], p2 = pts[i+1], p3 = pts[i+2] || p2;
+    var c1x = p1.x + (p2.x - p0.x) / 6, c1y = p1.y + (p2.y - p0.y) / 6;
+    var c2x = p2.x - (p3.x - p1.x) / 6, c2y = p2.y - (p3.y - p1.y) / 6;
+    d += ' C ' + c1x.toFixed(1) + ' ' + c1y.toFixed(1) + ', ' + c2x.toFixed(1) + ' ' + c2y.toFixed(1) + ', ' + p2.x.toFixed(1) + ' ' + p2.y.toFixed(1);
+  }
+  return d;
+}
+function gen(n, scaleIn, scaleOut, seed){
+  var r = rng(seed), pts = [];
+  for (var i = 0; i < n; i++){
+    var base = 0.55 + 0.45 * Math.sin((i / n) * Math.PI * 2 - 0.6);
+    pts.push({
+      inV: +(scaleIn * base * (0.7 + 0.55 * r())).toFixed(1),
+      outV: +(scaleOut * base * (0.6 + 0.55 * r())).toFixed(1)
+    });
+  }
+  return pts;
+}
+function buildChart(pts, W, top, bot){
+  var flat = [];
+  pts.forEach(function(p){ flat.push(p.inV, p.outV); });
+  var max = Math.max.apply(null, [1].concat(flat)) * 1.12;
+  var xs = function(i){ return pts.length > 1 ? (i * (W / (pts.length - 1))) : 0; };
+  var ptsIn = pts.map(function(p, i){ return { x: xs(i), y: bot - (p.inV / max) * (bot - top) }; });
+  var ptsOut = pts.map(function(p, i){ return { x: xs(i), y: bot - (p.outV / max) * (bot - top) }; });
+  var lineIn = smooth(ptsIn), lineOut = smooth(ptsOut);
+  return {
+    lineIn: lineIn, lineOut: lineOut,
+    areaIn: lineIn + ' L ' + W + ' ' + bot + ' L 0 ' + bot + ' Z',
+    areaOut: lineOut + ' L ' + W + ' ' + bot + ' L 0 ' + bot + ' Z',
+    maxIn: Math.max.apply(null, pts.map(function(p){ return p.inV; }))
+  };
+}
+function initials(name){
+  var parts = (name || '').split(/[\s_-]+/).filter(Boolean);
+  var a = (parts[0] || '')[0] || '';
+  var b = (parts[1] || '')[0] || '';
+  if (!b && parts[0]) b = (parts[0][1] || '');
+  return (a + b).toUpperCase();
+}
+
+// number formatter (bytes -> ГБ/ТБ) per spec
+function fmtBytes(b){
+  var gb = (b || 0) / 1e9;
+  if (gb >= 1000) return (gb / 1000).toFixed(2) + ' ТБ';
+  if (gb >= 100) return gb.toFixed(0) + ' ГБ';
+  return gb.toFixed(1) + ' ГБ';
+}
+
+// avatar swatch cycle (lavender / sage / clay)
+var SWATCHES = [
+  ['rgba(168,180,216,.16)','#b4bee0'],
+  ['rgba(163,199,181,.16)','#a3c7b5'],
+  ['rgba(214,185,161,.16)','#d6b9a1']
+];
+function swatch(i){ return SWATCHES[((i % 3) + 3) % 3]; }
+
+function statusMeta(online){
+  if (online) return { text:'онлайн', color:'#a3c7b5', dot:'#a3c7b5', anim:'animation:pulseDot 2.2s ease-in-out infinite;' };
+  return { text:'оффлайн', color:'#686d76', dot:'#454a52', anim:'' };
+}
+
+function seedFromName(name){
+  var s = 0;
+  for (var i = 0; i < (name || '').length; i++) s = (s * 31 + name.charCodeAt(i)) % 2147483647;
+  return s + 5;
+}
+
+function fmtLastSeen(iso){
+  if (!iso) return '—';
+  var d = new Date(iso);
+  if (isNaN(d.getTime())) return '—';
+  var pad = function(n){ return n < 10 ? '0' + n : '' + n; };
+  return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()) + ' ' + pad(d.getHours()) + ':' + pad(d.getMinutes());
+}
+
+function esc(s){
+  return String(s == null ? '' : s).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
+}
+function jsStr(s){ return String(s == null ? '' : s).replace(/\\/g,'\\\\').replace(/'/g,"\\'"); }
+
+function subUrl(u){ return location.origin + '/' + encodeURIComponent(u.subPath || u.name) + '.json'; }
+
+// ===================== fetch helpers =====================
+// Panel may be mounted under a sub-path by nginx (e.g. /admin/). Resolve API
+// calls relative to the directory the page was served from, so an absolute
+// '/api/...' is never sent past the reverse-proxy location.
+var API_BASE = location.pathname.replace(/[^/]*$/, '');
+function api(path, opts){
+  var url = API_BASE + String(path).replace(/^\//, '');
+  return fetch(url, opts).then(function(res){
+    return res.text().then(function(txt){
+      var data = null;
+      try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = null; }
+      return { ok: res.ok, status: res.status, data: data };
+    });
+  });
+}
+function loadUsers(){
+  return api('/api/users').then(function(r){
+    state.users = Array.isArray(r.data) ? r.data : [];
+  }).catch(function(){ state.users = []; });
+}
+function loadNode(){
+  return api('/api/node').then(function(r){
+    state.node = (r.data && typeof r.data.load === 'number') ? r.data.load : null;
+    renderSidebarNode();
+  }).catch(function(){});
+}
+
+// ===================== sidebar =====================
+function renderSidebar(){
+  return ''
+  + '<aside style="width:244px;flex:none;border-right:1px solid rgba(255,255,255,.07);padding:22px 16px;display:flex;flex-direction:column;gap:5px;position:sticky;top:0;height:100vh;">'
+    + '<div style="display:flex;align-items:center;gap:11px;padding:4px 8px 20px;">'
+      + '<div style="width:32px;height:32px;border-radius:10px;background:rgba(163,199,181,.16);color:#a3c7b5;display:flex;align-items:center;justify-content:center;font-family:\'JetBrains Mono\',monospace;font-weight:600;font-size:16px;flex:none;">X</div>'
+      + '<div style="line-height:1.2;">'
+        + '<div style="font-weight:700;font-size:15px;letter-spacing:-.01em;">Xray Panel</div>'
+        + '<div style="font-size:11px;color:#686d76;font-family:\'JetBrains Mono\',monospace;">v2.8 · core</div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="font-size:10.5px;letter-spacing:.08em;text-transform:uppercase;color:#5b606a;font-weight:600;padding:6px 10px 8px;">Меню</div>'
+    + '<button class="nav-btn" disabled>'
+      + '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none;"><rect x="3" y="3" width="7" height="7" rx="1.5" fill="currentColor"/><rect x="14" y="3" width="7" height="7" rx="1.5" fill="currentColor" opacity=".45"/><rect x="3" y="14" width="7" height="7" rx="1.5" fill="currentColor" opacity=".45"/><rect x="14" y="14" width="7" height="7" rx="1.5" fill="currentColor"/></svg>'
+      + 'Дашборд'
+    + '</button>'
+    + '<button class="nav-btn active" onclick="goUsers()">'
+      + '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="9" cy="8" r="3.4" fill="currentColor"/><circle cx="17.5" cy="9" r="2.6" fill="currentColor" opacity=".45"/><path d="M2.5 19c0-3.4 2.9-5.6 6.5-5.6s6.5 2.2 6.5 5.6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/></svg>'
+      + 'Пользователи'
+    + '</button>'
+    + '<div style="margin-top:auto;display:flex;flex-direction:column;gap:11px;">'
+      + '<div id="node-card">' + renderNodeCard() + '</div>'
+      + '<button class="nav-btn" disabled>'
+        + '<svg width="17" height="17" viewBox="0 0 24 24" fill="none" style="flex:none;"><circle cx="12" cy="12" r="3" stroke="currentColor" stroke-width="2"/><circle cx="12" cy="12" r="8.2" stroke="currentColor" stroke-width="2" opacity=".4"/></svg>'
+        + 'Настройки'
+      + '</button>'
+    + '</div>'
+  + '</aside>';
+}
+function renderNodeCard(){
+  var load = state.node;
+  var pct = (load == null) ? null : Math.min(100, Math.round(load * 100));
+  var barW = (pct == null) ? 0 : pct;
+  var pctLabel = (pct == null) ? '—' : pct + '%';
+  var rawLabel = (load == null) ? 'нет данных' : ('load ' + load.toFixed(2));
+  return ''
+  + '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:13px;padding:14px;">'
+    + '<div style="display:flex;justify-content:space-between;align-items:center;font-size:12px;color:#969ba3;margin-bottom:10px;">'
+      + '<span>Нагрузка ноды</span>'
+      + '<span style="font-family:\'JetBrains Mono\',monospace;color:#e7e9ec;">' + esc(pctLabel) + '</span>'
+    + '</div>'
+    + '<div style="height:6px;background:rgba(255,255,255,.06);border-radius:4px;overflow:hidden;"><div style="height:100%;width:' + barW + '%;background:#a3c7b5;border-radius:4px;transition:width .4s;"></div></div>'
+    + '<div style="display:flex;align-items:center;gap:7px;font-size:11px;color:#686d76;margin-top:11px;">'
+      + '<span style="width:7px;height:7px;border-radius:50%;background:#a3c7b5;animation:pulseDot 2.2s ease-in-out infinite;"></span>'
+      + esc(rawLabel)
+    + '</div>'
+  + '</div>';
+}
+function renderSidebarNode(){
+  var el = document.getElementById('node-card');
+  if (el) el.innerHTML = renderNodeCard();
+}
+
+// ===================== header =====================
+function renderHeader(){
+  var online = state.users.filter(function(u){ return u.online; }).length;
+  var title, subtitle;
+  if (state.screen === 'detail' && state.selected){
+    title = 'Профиль пользователя';
+    subtitle = state.selected.tag || '';
+  } else {
+    title = 'Пользователи';
+    subtitle = state.users.length + ' аккаунтов · ' + online + ' онлайн';
+  }
+  return ''
+  + '<header style="height:66px;flex:none;border-bottom:1px solid rgba(255,255,255,.07);display:flex;align-items:center;justify-content:space-between;padding:0 28px;gap:20px;">'
+    + '<div style="line-height:1.3;">'
+      + '<h1 style="margin:0;font-size:18px;font-weight:600;letter-spacing:-.01em;">' + esc(title) + '</h1>'
+      + '<div style="font-size:12px;color:#686d76;">' + esc(subtitle) + '</div>'
+    + '</div>'
+    + '<div style="display:flex;align-items:center;gap:13px;">'
+      + '<input class="search-input" id="search-input" placeholder="Поиск пользователя…" value="' + esc(state.search) + '" oninput="onSearch(this.value)"/>'
+      + '<button class="add-btn" onclick="openAddModal()">'
+        + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M12 5v14M5 12h14" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/></svg>'
+        + 'Добавить'
+      + '</button>'
+      + '<div style="width:38px;height:38px;border-radius:11px;background:rgba(168,180,216,.16);color:#b4bee0;display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex:none;">АД</div>'
+    + '</div>'
+  + '</header>';
+}
+
+// ===================== users list =====================
+function renderUsersList(){
+  var q = state.search.trim().toLowerCase();
+  var filtered = state.users.filter(function(u){
+    return !q || (u.name || '').toLowerCase().indexOf(q) >= 0 || (u.tag || '').toLowerCase().indexOf(q) >= 0;
+  });
+  var head = ''
+    + '<div style="display:grid;grid-template-columns:1.9fr .95fr 1.05fr .85fr .85fr .85fr 1fr;align-items:center;padding:14px 22px;font-size:11px;letter-spacing:.05em;text-transform:uppercase;color:#5b606a;font-weight:600;">'
+      + '<div>Пользователь</div><div>Статус</div><div>Локация</div>'
+      + '<div style="text-align:right;">Входящий</div><div style="text-align:right;">Исходящий</div>'
+      + '<div style="text-align:right;">Всего</div><div style="text-align:right;">Истекает</div>'
+    + '</div>';
+  var rows = '';
+  if (!filtered.length){
+    rows = '<div style="padding:34px 22px;border-top:1px solid rgba(255,255,255,.05);color:#686d76;font-size:13px;text-align:center;">' + (state.users.length ? 'Ничего не найдено' : 'Нет пользователей') + '</div>';
+  } else {
+    filtered.forEach(function(u){
+      var realIndex = state.users.indexOf(u);
+      var sw = swatch(realIndex);
+      var sm = statusMeta(u.online);
+      rows += ''
+      + '<div class="user-row" onclick="openDetail(\'' + jsStr(u.name) + '\')">'
+        + '<div style="display:flex;align-items:center;gap:12px;min-width:0;">'
+          + '<div style="width:36px;height:36px;border-radius:10px;background:' + sw[0] + ';color:' + sw[1] + ';display:flex;align-items:center;justify-content:center;font-weight:600;font-size:13px;flex:none;">' + esc(initials(u.name)) + '</div>'
+          + '<div style="min-width:0;">'
+            + '<div style="font-weight:500;font-size:13.5px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(u.name) + '</div>'
+            + '<div style="font-size:12px;color:#686d76;font-family:\'JetBrains Mono\',monospace;">' + esc(u.tag) + '</div>'
+          + '</div>'
+        + '</div>'
+        + '<div style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:' + sm.color + ';">'
+          + '<span style="width:7px;height:7px;border-radius:50%;background:' + sm.dot + ';flex:none;' + sm.anim + '"></span>' + sm.text
+        + '</div>'
+        + '<div style="font-size:12.5px;color:#b6bbc2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">—</div>'
+        + '<div style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-size:12.5px;color:#a3c7b5;">' + fmtBytes(u.down) + '</div>'
+        + '<div style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-size:12.5px;color:#d6b9a1;">' + fmtBytes(u.up) + '</div>'
+        + '<div style="text-align:right;font-family:\'JetBrains Mono\',monospace;font-size:12.5px;color:#e7e9ec;font-weight:500;">' + fmtBytes(u.total) + '</div>'
+        + '<div style="text-align:right;font-size:12.5px;color:#969ba3;font-family:\'JetBrains Mono\',monospace;">—</div>'
+      + '</div>';
+    });
+  }
+  return '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:14px;overflow:hidden;">' + head + rows + '</div>';
+}
+
+// ===================== user detail =====================
+function renderDetail(){
+  var u = state.selected;
+  if (!u) { state.screen = 'users'; return renderUsersList(); }
+  var idx = state.users.findIndex(function(x){ return x.name === u.name; });
+  var sw = swatch(idx < 0 ? 0 : idx);
+  var sm = statusMeta(u.online);
+
+  var dpts = gen(7, (u.down || 0) / 6e9, (u.up || 0) / 6e9, seedFromName(u.name));
+  var ch = buildChart(dpts, 720, 12, 188);
+  var axis = ['Пн','Вт','Ср','Чт','Пт','Сб','Вс'];
+
+  var kpis = [
+    { label:'Входящий', value:fmtBytes(u.down), dot:'#a3c7b5' },
+    { label:'Исходящий', value:fmtBytes(u.up), dot:'#d6b9a1' },
+    { label:'Всего', value:fmtBytes(u.total), dot:'#b4bee0' }
+  ];
+  var kpiHtml = kpis.map(function(k){
+    return ''
+    + '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px 20px;display:flex;flex-direction:column;gap:11px;">'
+      + '<div style="display:flex;align-items:center;gap:9px;"><span style="width:9px;height:9px;border-radius:3px;background:' + k.dot + ';flex:none;"></span><span style="font-size:12.5px;color:#969ba3;font-weight:500;">' + k.label + '</span></div>'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:24px;font-weight:600;letter-spacing:-.02em;line-height:1;">' + k.value + '</div>'
+    + '</div>';
+  }).join('');
+
+  var axisHtml = axis.map(function(l){ return '<span style="font-size:11px;color:#686d76;font-family:\'JetBrains Mono\',monospace;">' + l + '</span>'; }).join('');
+
+  var info = [
+    { label:'UUID', value:esc(u.uuid || '—') },
+    { label:'Протокол', value:'—' },
+    { label:'Inbound', value:'—' },
+    { label:'IP адрес', value:'—' },
+    { label:'Последний онлайн', value:esc(fmtLastSeen(u.lastSeen)) },
+    { label:'Подписка истекает', value:'—' }
+  ];
+  var infoHtml = info.map(function(row){
+    return ''
+    + '<div style="display:flex;align-items:center;justify-content:space-between;gap:14px;padding:11px 0;border-top:1px solid rgba(255,255,255,.05);">'
+      + '<span style="font-size:12.5px;color:#969ba3;">' + row.label + '</span>'
+      + '<span style="font-size:12.5px;color:#e7e9ec;font-family:\'JetBrains Mono\',monospace;text-align:right;word-break:break-all;">' + row.value + '</span>'
+    + '</div>';
+  }).join('');
+
+  var sub = subUrl(u);
+
+  return ''
+  + '<div style="display:flex;flex-direction:column;gap:18px;max-width:1120px;">'
+    + '<button class="back-btn" onclick="goUsers()">'
+      + '<svg width="16" height="16" viewBox="0 0 24 24" fill="none"><path d="M14 6l-6 6 6 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      + 'Все пользователи'
+    + '</button>'
+    + '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:24px;display:flex;align-items:center;gap:18px;flex-wrap:wrap;">'
+      + '<div style="width:60px;height:60px;border-radius:16px;background:' + sw[0] + ';color:' + sw[1] + ';display:flex;align-items:center;justify-content:center;font-weight:600;font-size:22px;flex:none;">' + esc(initials(u.name)) + '</div>'
+      + '<div style="flex:1;min-width:0;">'
+        + '<div style="font-size:20px;font-weight:600;letter-spacing:-.01em;">' + esc(u.name) + '</div>'
+        + '<div style="font-size:13px;color:#686d76;font-family:\'JetBrains Mono\',monospace;margin-top:2px;">' + esc(u.tag) + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:9px;flex-wrap:wrap;">'
+        + '<span style="display:flex;align-items:center;gap:7px;font-size:12.5px;color:' + sm.color + ';background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:7px 13px;border-radius:9px;"><span style="width:7px;height:7px;border-radius:50%;background:' + sm.dot + ';' + sm.anim + '"></span>' + sm.text + '</span>'
+        + '<span style="font-size:12.5px;color:#b6bbc2;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:7px 13px;border-radius:9px;font-family:\'JetBrains Mono\',monospace;">—</span>'
+        + '<span style="font-size:12.5px;color:#b6bbc2;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);padding:7px 13px;border-radius:9px;">—</span>'
+      + '</div>'
+    + '</div>'
+    + '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;">' + kpiHtml + '</div>'
+    + '<div style="display:grid;grid-template-columns:1.5fr 1fr;gap:18px;align-items:start;">'
+      + '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px 22px;min-width:0;">'
+        + '<div style="font-size:15px;font-weight:600;margin-bottom:4px;">Трафик за 7 дней</div>'
+        + '<div style="font-size:12px;color:#686d76;font-family:\'JetBrains Mono\',monospace;margin-bottom:16px;">синтетическая оценка</div>'
+        + '<svg viewBox="0 0 720 210" preserveAspectRatio="none" style="width:100%;height:200px;display:block;">'
+          + '<line x1="0" y1="22" x2="720" y2="22" stroke="rgba(255,255,255,.05)" stroke-width="1"/>'
+          + '<line x1="0" y1="105" x2="720" y2="105" stroke="rgba(255,255,255,.05)" stroke-width="1"/>'
+          + '<line x1="0" y1="188" x2="720" y2="188" stroke="rgba(255,255,255,.07)" stroke-width="1"/>'
+          + '<path d="' + ch.areaIn + '" fill="rgba(163,199,181,.13)"/>'
+          + '<path d="' + ch.areaOut + '" fill="rgba(214,185,161,.10)"/>'
+          + '<path d="' + ch.lineIn + '" fill="none" stroke="#a3c7b5" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'
+          + '<path d="' + ch.lineOut + '" fill="none" stroke="#d6b9a1" stroke-width="2.2" stroke-linejoin="round" stroke-linecap="round"/>'
+        + '</svg>'
+        + '<div style="display:flex;justify-content:space-between;margin-top:11px;padding:0 2px;">' + axisHtml + '</div>'
+      + '</div>'
+      + '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:20px 22px;">'
+        + '<div style="font-size:15px;font-weight:600;margin-bottom:16px;">Подключение</div>'
+        + '<div style="display:flex;flex-direction:column;">' + infoHtml + '</div>'
+      + '</div>'
+    + '</div>'
+    + '<div style="background:#1b1e24;border:1px solid rgba(255,255,255,.07);border-radius:14px;padding:18px 22px;display:flex;align-items:center;justify-content:space-between;gap:16px;flex-wrap:wrap;">'
+      + '<div style="min-width:0;flex:1;">'
+        + '<div style="font-size:12px;color:#969ba3;margin-bottom:6px;">Конфигурация подключения</div>'
+        + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:12.5px;color:#b6bbc2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">' + esc(sub) + '</div>'
+      + '</div>'
+      + '<div style="display:flex;gap:9px;">'
+        + '<button class="copy-btn" onclick="copyText(\'' + jsStr(sub) + '\', this)">Копировать</button>'
+        + '<button class="qr-btn" onclick="showQR(\'' + jsStr(sub) + '\')">QR</button>'
+      + '</div>'
+    + '</div>'
+    + '<button class="del-btn" onclick="confirmDelete()">'
+      + '<svg width="15" height="15" viewBox="0 0 24 24" fill="none"><path d="M5 7h14M9 7V5a1 1 0 011-1h4a1 1 0 011 1v2m-8 0v12a1 1 0 001 1h8a1 1 0 001-1V7" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'
+      + 'Удалить пользователя'
+    + '</button>'
+  + '</div>';
+}
+
+// ===================== main render =====================
+function render(){
+  var main = ''
+    + '<main style="flex:1;min-width:0;display:flex;flex-direction:column;">'
+      + renderHeader()
+      + '<div style="flex:1;overflow:auto;padding:28px;">'
+        + (state.screen === 'detail' ? renderDetail() : renderUsersList())
+      + '</div>'
+    + '</main>';
+  document.getElementById('app').innerHTML = renderSidebar() + main;
+  // preserve focus + caret on the search box across re-render
+  if (state._focusSearch){
+    var si = document.getElementById('search-input');
+    if (si){ si.focus(); var v = si.value; si.setSelectionRange(v.length, v.length); }
+  }
+}
+
+// ===================== navigation / events =====================
+function goUsers(){ state.screen = 'users'; state.selected = null; render(); }
+function openDetail(name){
+  var u = state.users.find(function(x){ return x.name === name; });
+  if (!u) return;
+  state.selected = u; state.screen = 'detail'; render();
+}
+function onSearch(v){
+  state.search = v;
+  state._focusSearch = true;
+  render();
+  state._focusSearch = false;
+}
+
+// ===================== copy / QR =====================
+function copyText(text, btn){
+  var done = function(){
+    if (!btn) return;
+    var old = btn.textContent;
+    btn.textContent = 'Скопировано';
+    setTimeout(function(){ btn.textContent = old; }, 1400);
+  };
+  if (navigator.clipboard && navigator.clipboard.writeText){
+    navigator.clipboard.writeText(text).then(done, function(){ fallbackCopy(text); done(); });
+  } else {
+    fallbackCopy(text); done();
+  }
+}
+function fallbackCopy(text){
+  var ta = document.createElement('textarea');
+  ta.value = text; ta.style.position = 'fixed'; ta.style.opacity = '0';
+  document.body.appendChild(ta); ta.select();
+  try { document.execCommand('copy'); } catch(e){}
+  document.body.removeChild(ta);
+}
+function showQR(text){
+  var root = document.getElementById('modal-root');
+  root.innerHTML = ''
+  + '<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'
+    + '<div class="modal-card" style="max-width:340px;text-align:center;">'
+      + '<div style="font-size:15px;font-weight:600;margin-bottom:18px;">QR код подписки</div>'
+      + '<div id="qrcode" style="display:inline-flex;padding:14px;background:#fff;border-radius:12px;"></div>'
+      + '<div style="font-family:\'JetBrains Mono\',monospace;font-size:11px;color:#686d76;margin-top:16px;word-break:break-all;">' + esc(text) + '</div>'
+      + '<button class="btn-ghost" style="margin-top:18px;width:100%;" onclick="closeModal()">Закрыть</button>'
+    + '</div>'
+  + '</div>';
+  var box = document.getElementById('qrcode');
+  if (box && typeof QRCode !== 'undefined'){
+    new QRCode(box, { text: text, width: 220, height: 220, colorDark:'#15171c', colorLight:'#ffffff', correctLevel: QRCode.CorrectLevel.M });
+  } else if (box){
+    box.style.color = '#15171c'; box.style.fontSize = '12px'; box.textContent = text;
+  }
+}
+function closeModal(){ document.getElementById('modal-root').innerHTML = ''; }
+
+// ===================== add modal =====================
+function openAddModal(){
+  var root = document.getElementById('modal-root');
+  root.innerHTML = ''
+  + '<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'
+    + '<div class="modal-card">'
+      + '<div style="font-size:16px;font-weight:600;margin-bottom:6px;">Новый пользователь</div>'
+      + '<div style="font-size:12.5px;color:#686d76;margin-bottom:18px;">Будет создан клиент и перезапущен xray.</div>'
+      + '<input class="modal-input" id="add-name" placeholder="имя латиницей" autocomplete="off" oninput="clearAddError()" onkeydown="if(event.key===\'Enter\')submitAdd()"/>'
+      + '<div id="add-error" style="font-size:12px;color:#d6b9a1;min-height:16px;margin-top:8px;"></div>'
+      + '<div style="display:flex;gap:10px;margin-top:14px;">'
+        + '<button class="btn-primary" id="add-submit" onclick="submitAdd()">Создать</button>'
+        + '<button class="btn-ghost" onclick="closeModal()">Отмена</button>'
+      + '</div>'
+    + '</div>'
+  + '</div>';
+  var inp = document.getElementById('add-name');
+  if (inp) inp.focus();
+}
+function clearAddError(){
+  var e = document.getElementById('add-error');
+  var inp = document.getElementById('add-name');
+  if (e) e.textContent = '';
+  if (inp) inp.classList.remove('err');
+}
+function showAddError(msg){
+  var e = document.getElementById('add-error');
+  var inp = document.getElementById('add-name');
+  if (e) e.textContent = msg;
+  if (inp) inp.classList.add('err');
+}
+var NAME_RE = /^[a-zA-Z0-9][a-zA-Z0-9_-]*$/;
+function submitAdd(){
+  var inp = document.getElementById('add-name');
+  var btn = document.getElementById('add-submit');
+  if (!inp) return;
+  var name = inp.value.trim();
+  if (!NAME_RE.test(name)){
+    showAddError('Имя: только латиница, цифры, _ или - (первый символ — буква/цифра)');
+    return;
+  }
+  btn.disabled = true;
+  inp.disabled = true;
+  var oldLabel = btn.textContent;
+  btn.textContent = 'Применяется…';
+  api('/api/users', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ name: name })
+  }).then(function(r){
+    if (r.ok){
+      closeModal();
+      loadUsers().then(render);
+    } else {
+      btn.disabled = false; inp.disabled = false; btn.textContent = oldLabel;
+      var msg = (r.data && r.data.error) ? r.data.error : ('Ошибка ' + r.status);
+      showAddError(msg);
+    }
+  }).catch(function(){
+    btn.disabled = false; inp.disabled = false; btn.textContent = oldLabel;
+    showAddError('Сетевая ошибка');
+  });
+}
+
+// ===================== delete confirm =====================
+function confirmDelete(){
+  var u = state.selected;
+  if (!u) return;
+  var root = document.getElementById('modal-root');
+  root.innerHTML = ''
+  + '<div class="modal-overlay" onclick="if(event.target===this)closeModal()">'
+    + '<div class="modal-card">'
+      + '<div style="font-size:16px;font-weight:600;margin-bottom:6px;">Удалить пользователя?</div>'
+      + '<div style="font-size:13px;color:#969ba3;line-height:1.5;margin-bottom:8px;">Пользователь <span style="color:#e7e9ec;font-weight:600;">' + esc(u.name) + '</span> будет удалён, а xray перезапущен. Действие необратимо.</div>'
+      + '<div id="del-error" style="font-size:12px;color:#d6b9a1;min-height:16px;margin-bottom:8px;"></div>'
+      + '<div style="display:flex;gap:10px;margin-top:6px;">'
+        + '<button class="btn-danger" id="del-submit" onclick="submitDelete()">Удалить</button>'
+        + '<button class="btn-ghost" onclick="closeModal()">Отмена</button>'
+      + '</div>'
+    + '</div>'
+  + '</div>';
+}
+function submitDelete(){
+  var u = state.selected;
+  if (!u) return;
+  var btn = document.getElementById('del-submit');
+  var oldLabel = btn.textContent;
+  btn.disabled = true;
+  btn.textContent = 'Применяется…';
+  api('/api/users/' + encodeURIComponent(u.name), { method: 'DELETE' }).then(function(r){
+    if (r.ok){
+      closeModal();
+      goUsers();
+      loadUsers().then(render);
+    } else {
+      btn.disabled = false; btn.textContent = oldLabel;
+      var e = document.getElementById('del-error');
+      if (e) e.textContent = (r.data && r.data.error) ? r.data.error : ('Ошибка ' + r.status);
+    }
+  }).catch(function(){
+    btn.disabled = false; btn.textContent = oldLabel;
+    var e = document.getElementById('del-error');
+    if (e) e.textContent = 'Сетевая ошибка';
+  });
+}
+
+// ===================== boot =====================
+render();
+loadUsers().then(render);
+loadNode();
+setInterval(loadNode, 5000);
+setInterval(function(){
+  var modalRoot = document.getElementById('modal-root');
+  var modalOpen = modalRoot && modalRoot.innerHTML.trim() !== '';
+  if (state.screen === 'users' && !modalOpen){
+    loadUsers().then(render);
+  }
+}, 30000);
+
+// expose handlers for inline attributes
+window.goUsers = goUsers;
+window.openDetail = openDetail;
+window.onSearch = onSearch;
+window.openAddModal = openAddModal;
+window.submitAdd = submitAdd;
+window.clearAddError = clearAddError;
+window.closeModal = closeModal;
+window.copyText = copyText;
+window.showQR = showQR;
+window.confirmDelete = confirmDelete;
+window.submitDelete = submitDelete;
+</script>
+</body>
+</html>
