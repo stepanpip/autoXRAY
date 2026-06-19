@@ -1,0 +1,4 @@
+/xray-panel
+/autoxray-panel
+*.exe
+panel.env
