@@ -46,6 +46,24 @@ func TestZeroDeltaKeepsTotal(t *testing.T) {
 	}
 }
 
+func TestAbsentClientGoesOffline(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "traffic.json")
+	s, _ := Load(path)
+	s.Apply(map[string]Snapshot{"alice": {Up: 10, Down: 10}})
+	if !s.Get("alice").Online() {
+		t.Fatal("alice should be online after active interval")
+	}
+	// Next poll has no traffic for alice (she is absent from the snapshot).
+	s.Apply(map[string]Snapshot{"bob": {Up: 1, Down: 1}})
+	alice := s.Get("alice")
+	if alice.Online() {
+		t.Fatalf("alice should be offline when absent, lastDelta=%d", alice.LastDelta)
+	}
+	if alice.Up != 10 || alice.Down != 10 {
+		t.Fatalf("alice totals must be kept, got %+v", alice)
+	}
+}
+
 func TestParseStatsJSON(t *testing.T) {
 	raw := []byte(`{"stat":[
 		{"name":"user>>>alice>>>traffic>>>uplink","value":"100"},

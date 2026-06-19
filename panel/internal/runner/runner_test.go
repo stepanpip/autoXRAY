@@ -6,6 +6,7 @@ import (
 	"runtime"
 	"strings"
 	"testing"
+	"time"
 )
 
 func stub(t *testing.T, body string) string {
@@ -40,5 +41,18 @@ func TestRunFailureCapturesOutput(t *testing.T) {
 	}
 	if !strings.Contains(err.Error(), "boom") {
 		t.Fatalf("error should include output: %v", err)
+	}
+}
+
+func TestRunTimesOut(t *testing.T) {
+	if runtime.GOOS == "windows" {
+		t.Skip("needs bash")
+	}
+	_, err := run(stub(t, `sleep 5`), nil, 100*time.Millisecond)
+	if err == nil {
+		t.Fatal("expected timeout error")
+	}
+	if !strings.Contains(err.Error(), "timed out") {
+		t.Fatalf("error should mention timeout: %v", err)
 	}
 }

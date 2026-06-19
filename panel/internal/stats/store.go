@@ -46,10 +46,18 @@ func Load(path string) (*Store, error) {
 }
 
 // Apply adds each per-client delta snapshot to the running total.
+//
+// LastDelta is the traffic seen in the most recent poll and drives Online().
+// It is reset to 0 for every known client first, so a client absent from this
+// snapshot (no traffic this interval) is reported offline instead of staying
+// online forever after a single active interval.
 func (s *Store) Apply(snaps map[string]Snapshot) {
 	s.mu.Lock()
 	defer s.mu.Unlock()
 	now := time.Now()
+	for _, t := range s.data {
+		t.LastDelta = 0
+	}
 	for name, snap := range snaps {
 		t := s.data[name]
 		if t == nil {

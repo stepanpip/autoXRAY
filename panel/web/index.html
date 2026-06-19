@@ -158,8 +158,13 @@ function jsStr(s){ return String(s == null ? '' : s).replace(/\\/g,'\\\\').repla
 function subUrl(u){ return location.origin + '/' + encodeURIComponent(u.subPath || u.name) + '.json'; }
 
 // ===================== fetch helpers =====================
+// Panel may be mounted under a sub-path by nginx (e.g. /admin/). Resolve API
+// calls relative to the directory the page was served from, so an absolute
+// '/api/...' is never sent past the reverse-proxy location.
+var API_BASE = location.pathname.replace(/[^/]*$/, '');
 function api(path, opts){
-  return fetch(path, opts).then(function(res){
+  var url = API_BASE + String(path).replace(/^\//, '');
+  return fetch(url, opts).then(function(res){
     return res.text().then(function(txt){
       var data = null;
       try { data = txt ? JSON.parse(txt) : null; } catch(e){ data = null; }
