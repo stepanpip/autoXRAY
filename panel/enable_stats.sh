@@ -4,6 +4,9 @@ AX_DIR="${AX_DIR:-/usr/local/etc/xray}"
 CFG="$AX_DIR/config.json"
 [[ -f "$CFG" ]] || { echo "Нет $CFG"; exit 1; }
 
+cp -f "$CFG" "$CFG.bak"
+echo "Бэкап: $CFG.bak"
+
 CFG="$CFG" python3 <<'PY'
 import json, os
 cfg_path = os.environ["CFG"]

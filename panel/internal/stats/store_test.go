@@ -73,3 +73,18 @@ func TestParseStatsJSONEmpty(t *testing.T) {
 		t.Fatalf("want empty, got %d", len(got))
 	}
 }
+
+func TestDeleteRemovesEntry(t *testing.T) {
+	path := filepath.Join(t.TempDir(), "traffic.json")
+	s, _ := Load(path)
+	s.Apply(map[string]Snapshot{"alice": {Up: 5, Down: 5}})
+	s.Delete("alice")
+	if got := s.Get("alice"); got.Up != 0 || got.Down != 0 {
+		t.Fatalf("entry should be gone, got %+v", got)
+	}
+	// persisted
+	s2, _ := Load(path)
+	if got := s2.Get("alice"); got.Up != 0 {
+		t.Fatalf("delete not persisted: %+v", got)
+	}
+}

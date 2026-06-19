@@ -587,6 +587,13 @@ render();
 loadUsers().then(render);
 loadNode();
 setInterval(loadNode, 5000);
+setInterval(function(){
+  var modalRoot = document.getElementById('modal-root');
+  var modalOpen = modalRoot && modalRoot.innerHTML.trim() !== '';
+  if (state.screen === 'users' && !modalOpen){
+    loadUsers().then(render);
+  }
+}, 30000);
 
 // expose handlers for inline attributes
 window.goUsers = goUsers;

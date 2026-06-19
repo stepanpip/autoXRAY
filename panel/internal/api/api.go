@@ -126,7 +126,8 @@ func (s *Server) addUser(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 	if out, err := s.run(s.Script, map[string]string{"AX_DIR": s.AxDir}); err != nil {
-		_ = clients.Delete(s.AxDir, body.Name) // rollback
+		_ = clients.Delete(s.AxDir, body.Name)                       // rollback clients.txt
+		_, _ = s.run(s.Script, map[string]string{"AX_DIR": s.AxDir}) // best-effort resync
 		writeJSON(w, 500, map[string]string{"error": err.Error(), "output": out})
 		return
 	}
@@ -152,6 +153,7 @@ func (s *Server) deleteUser(w http.ResponseWriter, r *http.Request) {
 		writeJSON(w, 500, map[string]string{"error": err.Error(), "output": out})
 		return
 	}
+	s.Store.Delete(name)
 	writeJSON(w, 200, map[string]string{"deleted": name})
 }
 

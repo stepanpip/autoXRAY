@@ -75,6 +75,14 @@ func (s *Store) Get(name string) Totals {
 	return Totals{}
 }
 
+// Delete removes a client's accumulated totals (e.g. when the user is deleted).
+func (s *Store) Delete(name string) {
+	s.mu.Lock()
+	defer s.mu.Unlock()
+	delete(s.data, name)
+	_ = s.save()
+}
+
 func (s *Store) save() error {
 	b, err := json.MarshalIndent(s.data, "", "  ")
 	if err != nil {
