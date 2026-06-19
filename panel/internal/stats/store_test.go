@@ -45,3 +45,31 @@ func TestZeroDeltaKeepsTotal(t *testing.T) {
 		t.Fatalf("want total 5 lastDelta 0, got %d/%d", tot.Up, tot.LastDelta)
 	}
 }
+
+func TestParseStatsJSON(t *testing.T) {
+	raw := []byte(`{"stat":[
+		{"name":"user>>>alice>>>traffic>>>uplink","value":"100"},
+		{"name":"user>>>alice>>>traffic>>>downlink","value":"250"},
+		{"name":"user>>>bob>>>traffic>>>uplink","value":"7"}
+	]}`)
+	got, err := parseStatsJSON(raw)
+	if err != nil {
+		t.Fatal(err)
+	}
+	if got["alice"].Up != 100 || got["alice"].Down != 250 {
+		t.Fatalf("alice wrong: %+v", got["alice"])
+	}
+	if got["bob"].Up != 7 || got["bob"].Down != 0 {
+		t.Fatalf("bob wrong: %+v", got["bob"])
+	}
+}
+
+func TestParseStatsJSONEmpty(t *testing.T) {
+	got, err := parseStatsJSON([]byte(`{}`))
+	if err != nil {
+		t.Fatal(err)
+	}
+	if len(got) != 0 {
+		t.Fatalf("want empty, got %d", len(got))
+	}
+}
